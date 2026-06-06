@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+build/
+dist/
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+
+# State (sqlite ledger lives at runtime path, not in repo)
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Local dev secrets (Vault is the source of truth)
+.env
+.env.local
+
+# Editor
+.idea/
+.vscode/
+*.swp
+*~
+.DS_Store

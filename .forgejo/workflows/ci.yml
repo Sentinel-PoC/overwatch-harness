@@ -1,0 +1,47 @@
+---
+# OPS-331: minimum-viable CI for overwatch-harness.
+# Lints + runs the existing tests/ suite on every push and PR. No build,
+# no deploy — this repo is deployed via systemd on iac-control by the
+# operator running `pip install -e .` and a service restart, not via CI.
+name: lint-and-test
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-and-test:
+    runs-on: iac
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show python + tooling versions
+        run: |
+          python3 --version
+          pip --version
+
+      - name: Install dev dependencies in a venv (don't pollute runner host)
+        run: |
+          python3 -m venv .venv
+          . .venv/bin/activate
+          pip install --quiet --upgrade pip
+          pip install --quiet -e '.[dev]' bandit
+
+      - name: Ruff lint
+        run: |
+          . .venv/bin/activate
+          ruff check src tests
+
+      # OPS-332 Gap #1: SAST. Bandit at HIGH+MEDIUM severity gates the build.
+      # NIST SA-11(1) — Developer Security Testing: static analysis.
+      # LOW-severity findings reported but not blocking; review in baseline.
+      - name: Bandit SAST (HIGH+MEDIUM gate)
+        run: |
+          . .venv/bin/activate
+          bandit -r src -ll
+
+      - name: Pytest
+        run: |
+          . .venv/bin/activate
+          pytest -q

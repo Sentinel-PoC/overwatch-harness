@@ -1,0 +1,37 @@
+[Unit]
+Description=Overwatch Harness — Telegram → Claude session router (OPS-197)
+Documentation=https://forgejo.208.haist.farm/sentinel-admin/overwatch-harness
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=notify
+ExecStart=%h/.local/bin/overwatch-harness
+WorkingDirectory=%h/.local/state/overwatch-harness
+
+# Restart=on-failure (NOT always) — claude-channels' 944-restart pathology
+# was hidden by always-restart. on-failure means systemd surfaces persistent
+# failures instead of masking them via infinite respawn.
+Restart=on-failure
+RestartSec=15
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+# Notify timeout — daemon's startup self-test (verify claude -p works) must
+# complete before this expires or systemd kills it.
+TimeoutStartSec=90
+
+# Logs go to journald
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=overwatch-harness
+
+# State directory (~/.local/state/overwatch-harness/)
+StateDirectory=overwatch-harness
+StateDirectoryMode=0700
+
+# Environment file with non-Vault config (Vault paths, log level, concurrency cap)
+EnvironmentFile=-%h/.config/overwatch-harness/env
+
+[Install]
+WantedBy=default.target
